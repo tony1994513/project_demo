@@ -15,7 +15,10 @@
 </include>
 
 <!-- launch camera server -->
-<!--<include  file="$(find linemod_pose_estimation)/launch/object_detection.launch">
+<include  file="$(find linemod_pose_estimation)/launch/object_detection.launch">
+</include>
+
+<!--<include  file="$(find ensenso)/launch/ensenso_bringup.launch">
 </include>-->
 
 <!--<node name="ft_wacoh_pub" pkg="ft_wacoh" type="ft_wacoh_pub" output="screen"/>-->
