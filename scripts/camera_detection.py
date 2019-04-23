@@ -69,7 +69,7 @@ class MoveToPrePickPosition(smach.State):
         global robot,group,picking_pose
         print picking_pose
         prepick = copy.deepcopy(picking_pose)
-        prepick.position.z += 0.4
+        prepick.position.z += 0.2
         print prepick
         plan = arm_utils.iK_calculate(group,prepick)
         arm_utils.execute_plan(group,plan)
@@ -88,13 +88,12 @@ class MoveToPickPosition(smach.State):
                 arm_utils.execute_plan(group,plan)
         else:
             pick = copy.deepcopy(picking_pose)
-            pick.position.z += 0.18
-            plan = arm_utils.iK_calculate(group,pick)
-            # new_traj = arm_utils.linear_interplotation(picking_pose)
-            # (plan, fraction) = group.compute_cartesian_path(
-            #                 new_traj,   # waypoints to follow
-            #                 0.01,        # eef_step
-            #                 0.0)         # jump_threshold
+            # plan = arm_utils.iK_calculate(group,pick)
+            new_traj = arm_utils.linear_interplotation(pick)
+            (plan, fraction) = group.compute_cartesian_path(
+                             new_traj,   # waypoints to follow
+                             0.01,        # eef_step
+                             0.0)         # jump_threshold
             arm_utils.execute_plan(group,plan)
             
         if not SIMULATION:
@@ -115,8 +114,8 @@ def main():
 
     sm = smach.StateMachine(outcomes=['Done'])
     with sm:
-        # smach.StateMachine.add(MoveToReadyPose.__name__, MoveToReadyPose(), 
-        #                        transitions={'succuss':MoveToCameraDetectionPosition.__name__})     
+        #smach.StateMachine.add(MoveToReadyPose.__name__, MoveToReadyPose(), 
+        #                       transitions={'succuss':MoveToCameraDetectionPosition.__name__})     
 
         smach.StateMachine.add(MoveToCameraDetectionPosition.__name__, MoveToCameraDetectionPosition(), 
                                transitions={'succuss':DetermineObjectPose.__name__})    
