@@ -36,6 +36,19 @@ class MoveToReadyPose(smach.State):
             arm_utils.gripper_control("open")
         return "succuss"
 
+class MoveToMiddlePose(smach.State):
+    def __init__(self):
+        smach.State.__init__(self, outcomes=['succuss'])
+
+    def execute(self, userdata):
+        global robot,group
+        home_position = _Constant.home 
+        home_plan = arm_utils.fK_calculate(group,home_position)
+        arm_utils.execute_plan(group,home_plan)
+        if not SIMULATION:
+            arm_utils.gripper_control("open")
+        return "succuss"
+
 class MoveToCameraDetectionPosition(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succuss'])
@@ -105,6 +118,51 @@ class MoveToPickPosition(smach.State):
             arm_utils.gripper_control("chip_close")
         return "succuss"
 
+class BackToPrePickPosition(smach.State):
+    def __init__(self):
+        smach.State.__init__(self, outcomes=['succuss'])
+
+    def execute(self, userdata):
+        global robot,group,picking_pose
+        if HUMAN_CONTROL:
+            for position in _Constant.pick_position_list:
+                plan = arm_utils.fK_calculate(group,position)
+                arm_utils.execute_plan(group,plan)
+        else:
+            prepick = copy.deepcopy(picking_pose)
+            plan = arm_utils.iK_calculate(group,prepick)
+            arm_utils.execute_plan(group,plan)
+            
+        if not SIMULATION:
+            arm_utils.gripper_control("chip_close")
+        return "succuss"
+
+class MoveToPreInsertPosition(smach.State):
+    def __init__(self):
+        smach.State.__init__(self, outcomes=['succuss'])
+
+    def execute(self, userdata):
+        global robot,group
+        plan = arm_utils.fK_calculate(group,home_position)
+        arm_utils.execute_plan(group,plan)
+        if not SIMULATION:
+            arm_utils.gripper_control("open")
+        return "succuss"
+
+class MoveToPreInsertPosition(smach.State):
+    def __init__(self):
+        smach.State.__init__(self, outcomes=['succuss'])
+
+    def execute(self, userdata):
+        global robot,group
+        for position in _Constant.preinsert_position_list:
+            plan = arm_utils.fK_calculate(group,position)
+            arm_utils.execute_plan(group,plan)
+        if not SIMULATION:
+            arm_utils.gripper_control("open")
+        return "succuss"
+
+
 def main():
     global robot,group
     rospy.init_node("memory_chip_demo",anonymous=True)
@@ -118,6 +176,7 @@ def main():
     group.set_goal_orientation_tolerance(0.001)
 
     sm = smach.StateMachine(outcomes=['Done'])
+
     with sm:
         smach.StateMachine.add(MoveToReadyPose.__name__, MoveToReadyPose(), 
                                transitions={'succuss':MoveToCameraDetectionPosition.__name__})     
@@ -126,7 +185,10 @@ def main():
                                transitions={'succuss':DetermineObjectPose.__name__})    
 
         smach.StateMachine.add(DetermineObjectPose.__name__, DetermineObjectPose(), 
-                               transitions={'succuss':MoveToPrePickPosition.__name__}),                                                                                                
+                               transitions={'succuss':MoveToMiddlePose.__name__}),                                                                                                
+
+        smach.StateMachine.add(MoveToMiddlePose.__name__, MoveToMiddlePose(), 
+                               transitions={'succuss':MoveToPrePickPosition.__name__})  
 
         smach.StateMachine.add(MoveToPrePickPosition.__name__, MoveToPrePickPosition(), 
                                transitions={'succuss':MoveToPickPosition.__name__}),   
