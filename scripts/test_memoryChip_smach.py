@@ -69,15 +69,19 @@ class DetermineObjectPose(smach.State):
 
     def execute(self, userdata):
         global robot,group,picking_pose
-        rospy.sleep(1)
-        object_pose = arm_utils.object_pose(0)
-        print "object pose"
-        print [object_pose.pose.translation.x, object_pose.pose.translation.y, object_pose.pose.translation.z,
-        object_pose.pose.rotation.x ,object_pose.pose.rotation.y,object_pose.pose.rotation.z,object_pose.pose.rotation.w] 
-        picking_pose = arm_utils.objectPoseToPickpose(object_pose)
-        print "raw picking pose"
-        print [picking_pose.position.x,picking_pose.position.y,picking_pose.position.z,picking_pose.orientation.x
-               ,picking_pose.orientation.y,picking_pose.orientation.z,picking_pose.orientation.w]
+        if not HUMAN_CONTROL:
+            rospy.sleep(1)
+            object_pose = arm_utils.object_pose(0)
+            print "object pose"
+            print [object_pose.pose.translation.x, object_pose.pose.translation.y, object_pose.pose.translation.z,
+            object_pose.pose.rotation.x ,object_pose.pose.rotation.y,object_pose.pose.rotation.z,object_pose.pose.rotation.w] 
+            picking_pose = arm_utils.objectPoseToPickpose(object_pose)
+            print "raw picking pose"
+            print [picking_pose.position.x,picking_pose.position.y,picking_pose.position.z,picking_pose.orientation.x
+                ,picking_pose.orientation.y,picking_pose.orientation.z,picking_pose.orientation.w]
+        else:
+            rospy.loginfo("jointAngle mode")
+            fk_compute_service
         return "succuss"
 
 class MoveToPrePickPosition(smach.State):
