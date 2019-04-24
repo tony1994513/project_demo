@@ -16,12 +16,14 @@ import copy
 
 robot = None
 group = None
-picking_pose = None
 
-insert_position = []
+SIMULATION = False
+HUMAN_CONTROL = True
 
-SIMULATION = True
-HUMAN_CONTROL = False
+picking_pose = _Constant.cpu_pickPose
+insert_pose = _Constant.cpu_insertPose
+prepick_offset = _Constant.prepick_offset
+preinsert_offset = _Constant.preinsert_offset
 
 class MoveToReadyPose(smach.State):
     def __init__(self):
@@ -29,6 +31,7 @@ class MoveToReadyPose(smach.State):
 
     def execute(self, userdata):
         global robot,group
+        arm_utils.speed_set()
         home_position = _Constant.home 
         home_plan = arm_utils.fK_calculate(group,home_position)
         arm_utils.execute_plan(group,home_plan)
@@ -56,11 +59,9 @@ class MoveToCameraDetectionPosition(smach.State):
     def execute(self, userdata):
         global robot,group
 
-        plan = arm_utils.fK_calculate(group,_Constant.camera_detection_position)
+        plan = arm_utils.fK_calculate(group,_Constant.cpu_camera_detection)
         arm_utils.execute_plan(group,plan)
             
-        if not SIMULATION:
-            arm_utils.gripper_control("open")
         return "succuss"
 
 class DetermineObjectPose(smach.State):
@@ -80,8 +81,9 @@ class DetermineObjectPose(smach.State):
             print [picking_pose.position.x,picking_pose.position.y,picking_pose.position.z,picking_pose.orientation.x
                 ,picking_pose.orientation.y,picking_pose.orientation.z,picking_pose.orientation.w]
         else:
-            rospy.loginfo("jointAngle mode")
-            fk_compute_service
+            rospy.loginfo("Picking pose set by human")
+            picking_pose = picking_pose
+
         return "succuss"
 
 class MoveToPrePickPosition(smach.State):
@@ -92,7 +94,7 @@ class MoveToPrePickPosition(smach.State):
         global robot,group,picking_pose
 
         prepick = copy.deepcopy(picking_pose)
-        prepick.position.z += 0.17
+        prepick.position.z += prepick_offset
         plan = arm_utils.iK_calculate(group,prepick)
         arm_utils.execute_plan(group,plan)
         return "succuss"
@@ -104,22 +106,19 @@ class MoveToPickPosition(smach.State):
 
     def execute(self, userdata):
         global robot,group,picking_pose
-        if HUMAN_CONTROL:
-            for position in _Constant.pick_position_list:
-                plan = arm_utils.fK_calculate(group,position)
-                arm_utils.execute_plan(group,plan)
-        else:
-            pick = copy.deepcopy(picking_pose)
-            plan = arm_utils.iK_calculate(group,pick)
-            new_traj = arm_utils.linear_interplotation(pick)
-            (plan, fraction) = group.compute_cartesian_path(
-                             new_traj,   # waypoints to follow
-                             0.001,        # eef_step
-                             0.0)         # jump_threshold
-            arm_utils.execute_plan(group,plan)
+
+        pick = copy.deepcopy(picking_pose)
+        plan = arm_utils.iK_calculate(group,pick)
+        new_traj = arm_utils.linear_interplotation(pick)
+        (plan, fraction) = group.compute_cartesian_path(
+                            new_traj,   # waypoints to follow
+                            0.001,        # eef_step
+                            0.0)         # jump_threshold
+        arm_utils.execute_plan(group,plan)
             
         if not SIMULATION:
-            arm_utils.gripper_control("chip_close")
+            rospy.sleep(1)
+            arm_utils.gripper_control("cpu_close")
         return "succuss"
 
 class BackToPrePickPosition(smach.State):
@@ -128,17 +127,11 @@ class BackToPrePickPosition(smach.State):
 
     def execute(self, userdata):
         global robot,group,picking_pose
-        if HUMAN_CONTROL:
-            for position in _Constant.pick_position_list:
-                plan = arm_utils.fK_calculate(group,position)
-                arm_utils.execute_plan(group,plan)
-        else:
-            prepick = copy.deepcopy(picking_pose)
-            plan = arm_utils.iK_calculate(group,prepick)
-            arm_utils.execute_plan(group,plan)
-            
-        if not SIMULATION:
-            arm_utils.gripper_control("chip_close")
+
+        prepick = copy.deepcopy(picking_pose)
+        prepick.position.z += prepick_offset
+        plan = arm_utils.iK_calculate(group,prepick)
+        arm_utils.execute_plan(group,plan)
         return "succuss"
 
 class MoveToPreInsertPosition(smach.State):
@@ -146,22 +139,41 @@ class MoveToPreInsertPosition(smach.State):
         smach.State.__init__(self, outcomes=['succuss'])
 
     def execute(self, userdata):
-        global robot,group
-        plan = arm_utils.fK_calculate(group,home_position)
+        global robot,group,insert_pose
+        preinsert = copy.deepcopy(insert_pose)
+        preinsert.position.z += preinsert_offset
+        plan = arm_utils.iK_calculate(group,preinsert)
+        arm_utils.execute_plan(group,plan)
+        return "succuss"
+
+class MoveToInsertPosition(smach.State):
+    def __init__(self):
+        smach.State.__init__(self, outcomes=['succuss'])
+
+    def execute(self, userdata):
+        global robot,group,insert_pose
+
+        insert_pose = copy.deepcopy(insert_pose)
+        new_traj = arm_utils.linear_interplotation(insert_pose)
+        (plan, fraction) = group.compute_cartesian_path(
+                            new_traj,   # waypoints to follow
+                            0.001,        # eef_step
+                            0.0)         # jump_threshold
         arm_utils.execute_plan(group,plan)
         if not SIMULATION:
             arm_utils.gripper_control("open")
         return "succuss"
 
-class MoveToPreInsertPosition(smach.State):
+class BackToPreInsertPosition(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succuss'])
 
     def execute(self, userdata):
         global robot,group
-        for position in _Constant.preinsert_position_list:
-            plan = arm_utils.fK_calculate(group,position)
-            arm_utils.execute_plan(group,plan)
+        preinsert = copy.deepcopy(insert_pose)
+        preinsert.position.z += preinsert_offset
+        plan = arm_utils.iK_calculate(group,preinsert)
+        arm_utils.execute_plan(group,plan)
         if not SIMULATION:
             arm_utils.gripper_control("open")
         return "succuss"
@@ -173,8 +185,8 @@ def main():
     moveit_commander.roscpp_initialize(sys.argv)
     robot = moveit_commander.RobotCommander()
     group = moveit_commander.MoveGroupCommander("tx90_arm")
-    # group.set_max_velocity_scaling_factor(0.01)
-    # group.set_max_acceleration_scaling_factor(0.01)
+    group.set_max_velocity_scaling_factor(1)
+    group.set_max_acceleration_scaling_factor(1)
     group.set_goal_joint_tolerance(0.001)
     group.set_goal_position_tolerance(0.001)
     group.set_goal_orientation_tolerance(0.001)
@@ -182,11 +194,11 @@ def main():
     sm = smach.StateMachine(outcomes=['Done'])
 
     with sm:
-        smach.StateMachine.add(MoveToReadyPose.__name__, MoveToReadyPose(), 
-                               transitions={'succuss':MoveToCameraDetectionPosition.__name__})     
+        # smach.StateMachine.add(MoveToReadyPose.__name__, MoveToReadyPose(), 
+        #                        transitions={'succuss':MoveToCameraDetectionPosition.__name__})     
 
-        smach.StateMachine.add(MoveToCameraDetectionPosition.__name__, MoveToCameraDetectionPosition(), 
-                               transitions={'succuss':DetermineObjectPose.__name__})    
+        # smach.StateMachine.add(MoveToCameraDetectionPosition.__name__, MoveToCameraDetectionPosition(), 
+        #                        transitions={'succuss':DetermineObjectPose.__name__})    
 
         smach.StateMachine.add(DetermineObjectPose.__name__, DetermineObjectPose(), 
                                transitions={'succuss':MoveToMiddlePose.__name__}),                                                                                                
@@ -198,8 +210,20 @@ def main():
                                transitions={'succuss':MoveToPickPosition.__name__}),   
 
         smach.StateMachine.add(MoveToPickPosition.__name__, MoveToPickPosition(), 
-                               transitions={'succuss':"Done"}), 
-                                                 
+                               transitions={'succuss':BackToPrePickPosition.__name__}), 
+
+        smach.StateMachine.add(BackToPrePickPosition.__name__, BackToPrePickPosition(), 
+                               transitions={'succuss':MoveToPreInsertPosition.__name__}),                                                 
+
+        smach.StateMachine.add(MoveToPreInsertPosition.__name__, MoveToPreInsertPosition(), 
+                               transitions={'succuss':MoveToInsertPosition.__name__}), 
+
+        smach.StateMachine.add(MoveToInsertPosition.__name__, MoveToInsertPosition(), 
+                               transitions={'succuss':BackToPreInsertPosition.__name__}), 
+
+        smach.StateMachine.add(BackToPreInsertPosition.__name__, BackToPreInsertPosition(), 
+                               transitions={'succuss':"Done"}),           
+
     outcome = sm.execute()
     # Shut down MoveIt cleanly
     moveit_commander.roscpp_shutdown()
