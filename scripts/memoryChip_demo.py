@@ -31,12 +31,13 @@ class MoveToReadyPose(smach.State):
 
     def execute(self, userdata):
         global robot,group
+        if not SIMULATION:
+            arm_utils.gripper_control("open")
         arm_utils.speed_set(group, 1)
         home_position = _Constant.home 
         home_plan = arm_utils.fK_calculate(group,home_position)
         arm_utils.execute_plan(group,home_plan)
-        if not SIMULATION:
-            arm_utils.gripper_control("open")
+
         return "succuss"
 
 class MoveToMiddlePose(smach.State):
@@ -45,12 +46,13 @@ class MoveToMiddlePose(smach.State):
 
     def execute(self, userdata):
         global robot,group
+        if not SIMULATION:
+            arm_utils.gripper_control("open")
         arm_utils.speed_set(group, 1)
         home_position = _Constant.home 
         home_plan = arm_utils.fK_calculate(group,home_position)
         arm_utils.execute_plan(group,home_plan)
-        if not SIMULATION:
-            arm_utils.gripper_control("open")
+
         return "succuss"
 
 class MoveToCameraDetectionPosition(smach.State):
@@ -59,7 +61,7 @@ class MoveToCameraDetectionPosition(smach.State):
 
     def execute(self, userdata):
         global robot,group
-        arm_utils.speed_set(group, 0.6)
+        # arm_utils.speed_set(group, 0.6)
         plan = arm_utils.fK_calculate(group,_Constant.memoeryChip_camera_detection)
         arm_utils.execute_plan(group,plan)
             
@@ -72,7 +74,7 @@ class DetermineObjectPose(smach.State):
     def execute(self, userdata):
         global robot,group,picking_pose
         if not HUMAN_CONTROL:
-            rospy.sleep(1)
+            rospy.sleep(3)
             object_pose = arm_utils.object_pose(0)
             print "object pose"
             print [object_pose.pose.translation.x, object_pose.pose.translation.y, object_pose.pose.translation.z,
@@ -118,8 +120,9 @@ class MoveToPickPosition(smach.State):
         arm_utils.execute_plan(group,plan)
             
         if not SIMULATION:
-            rospy.sleep(1)
+            rospy.sleep(2)
             arm_utils.gripper_control("chip_close")
+            rospy.sleep(1)
             # rospy.sleep(2)
             # arm_utils.gripper_control("open")
         return "succuss"
@@ -133,7 +136,11 @@ class BackToPrePickPosition(smach.State):
         arm_utils.speed_set(group, 1)
         prepick = copy.deepcopy(picking_pose)
         prepick.position.z += prepick_offset
-        plan = arm_utils.iK_calculate(group,prepick)
+        new_traj = arm_utils.linear_interplotation_back(prepick)
+        (plan, fraction) = group.compute_cartesian_path(
+                            new_traj,   # waypoints to follow
+                            0.1,        # eef_step
+                            0.0)         # jump_threshold
         arm_utils.execute_plan(group,plan)
         return "succuss"
 
@@ -165,7 +172,9 @@ class MoveToInsertPosition(smach.State):
                             0.0)         # jump_threshold
         arm_utils.execute_plan(group,plan)
         if not SIMULATION:
+            rospy.sleep(2)
             arm_utils.gripper_control("open")
+            rospy.sleep(1)
         return "succuss"
 
 class BackToPreInsertPosition(smach.State):
@@ -177,8 +186,13 @@ class BackToPreInsertPosition(smach.State):
         arm_utils.speed_set(group, 1)
         preinsert = copy.deepcopy(insert_pose)
         preinsert.position.z += preinsert_offset
-        plan = arm_utils.iK_calculate(group,preinsert)
+        new_traj = arm_utils.linear_interplotation_back(preinsert)
+        (plan, fraction) = group.compute_cartesian_path(
+                            new_traj,   # waypoints to follow
+                            0.1,        # eef_step
+                            0.0)         # jump_threshold
         arm_utils.execute_plan(group,plan)
+        
         if not SIMULATION:
             arm_utils.gripper_control("open")
         return "succuss"
@@ -199,11 +213,11 @@ def main():
     sm = smach.StateMachine(outcomes=['Done'])
 
     with sm:
-        # smach.StateMachine.add(MoveToReadyPose.__name__, MoveToReadyPose(), 
-        #                        transitions={'succuss':MoveToCameraDetectionPosition.__name__})     
+        smach.StateMachine.add(MoveToReadyPose.__name__, MoveToReadyPose(), 
+                               transitions={'succuss':MoveToCameraDetectionPosition.__name__})     
 
-        # smach.StateMachine.add(MoveToCameraDetectionPosition.__name__, MoveToCameraDetectionPosition(), 
-        #                        transitions={'succuss':DetermineObjectPose.__name__})    
+        smach.StateMachine.add(MoveToCameraDetectionPosition.__name__, MoveToCameraDetectionPosition(), 
+                               transitions={'succuss':DetermineObjectPose.__name__})    
 
         smach.StateMachine.add(DetermineObjectPose.__name__, DetermineObjectPose(), 
                                transitions={'succuss':MoveToMiddlePose.__name__}),                                                                                                
