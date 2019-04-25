@@ -14,12 +14,6 @@
     <arg name="robot_ip" value="$(arg robot_ip)" /> 
 </include>
 
-<!-- launch camera server -->
-<include  file="$(find linemod_pose_estimation)/launch/object_detection.launch">
-</include>
-
-<!--<include  file="$(find ensenso)/launch/ensenso_bringup.launch">
-</include>-->
 
 <!--<node name="ft_wacoh_pub" pkg="ft_wacoh" type="ft_wacoh_pub" output="screen"/>-->
 
@@ -30,5 +24,6 @@
 <arg name="config" default="true" />
 <arg unless="$(arg config)" name="command_args" value="" />
 <arg     if="$(arg config)" name="command_args" value="-d $(find project_demo)/rviz_config/demo.rviz" />
+
 
 </launch>
