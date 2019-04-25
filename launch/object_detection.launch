@@ -13,13 +13,13 @@
     <arg name="args9" default="20"/>
     <arg name="args10" default="10"/>
     <arg name="args11" default="4"/>
-    <arg name="args12" default="$(arg basic_path)data/cpu_binary_ensenso_templates.yml"/>
-    <arg name="args13" default="$(arg basic_path)data/cpu_binary_ensenso_renderer_params.yml"/>
-    <arg name="args14" default="$(arg basic_path)/stl/cpu_binary.stl"/>
+    <arg name="args12" default="$(arg basic_path)/data_new/cpu1_siat_ensenso_templates_0.yml"/>
+    <arg name="args13" default="$(arg basic_path)/data_new/cpu1_siat_ensenso_params_0.yml"/>
+    <arg name="args14" default="$(arg basic_path)/stl/cpu_ascii.stl"/>
     <arg name="args15" default="94"/>
 
     <arg name="args16" default="0.80"/>
-    <arg name="args17" default="0.88"/>
+    <arg name="args17" default="0.80"/>
 
 
 
