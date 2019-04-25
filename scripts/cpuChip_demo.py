@@ -31,7 +31,6 @@ class MoveToReadyPose(smach.State):
 
     def execute(self, userdata):
         global robot,group
-        arm_utils.speed_set()
         home_position = _Constant.home 
         home_plan = arm_utils.fK_calculate(group,home_position)
         arm_utils.execute_plan(group,home_plan)
@@ -57,11 +56,11 @@ class MoveToCameraDetectionPosition(smach.State):
         smach.State.__init__(self, outcomes=['succuss'])
 
     def execute(self, userdata):
-        global robot,group
-
+        global robot,group,picking_pose
+ 
         plan = arm_utils.fK_calculate(group,_Constant.cpu_camera_detection)
-        arm_utils.execute_plan(group,plan)
-            
+        arm_utils.execute_plan(group,plan )
+        rospy.sleep(2)
         return "succuss"
 
 class DetermineObjectPose(smach.State):
@@ -194,17 +193,14 @@ def main():
     sm = smach.StateMachine(outcomes=['Done'])
 
     with sm:
-        # smach.StateMachine.add(MoveToReadyPose.__name__, MoveToReadyPose(), 
-        #                        transitions={'succuss':MoveToCameraDetectionPosition.__name__})     
+        smach.StateMachine.add(MoveToReadyPose.__name__, MoveToReadyPose(), 
+                               transitions={'succuss':MoveToCameraDetectionPosition.__name__})     
 
-        # smach.StateMachine.add(MoveToCameraDetectionPosition.__name__, MoveToCameraDetectionPosition(), 
-        #                        transitions={'succuss':DetermineObjectPose.__name__})    
+        smach.StateMachine.add(MoveToCameraDetectionPosition.__name__, MoveToCameraDetectionPosition(), 
+                               transitions={'succuss':DetermineObjectPose.__name__})    
 
         smach.StateMachine.add(DetermineObjectPose.__name__, DetermineObjectPose(), 
-                               transitions={'succuss':MoveToMiddlePose.__name__}),                                                                                                
-
-        smach.StateMachine.add(MoveToMiddlePose.__name__, MoveToMiddlePose(), 
-                               transitions={'succuss':MoveToPrePickPosition.__name__})  
+                               transitions={'succuss':MoveToPrePickPosition.__name__}),                                                                                                
 
         smach.StateMachine.add(MoveToPrePickPosition.__name__, MoveToPrePickPosition(), 
                                transitions={'succuss':MoveToPickPosition.__name__}),   

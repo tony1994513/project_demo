@@ -64,7 +64,7 @@ class MoveToCameraDetectionPosition(smach.State):
         # arm_utils.speed_set(group, 0.6)
         plan = arm_utils.fK_calculate(group,_Constant.memoeryChip_camera_detection)
         arm_utils.execute_plan(group,plan)
-            
+        rospy.sleep(3)
         return "succuss"
 
 class DetermineObjectPose(smach.State):
@@ -74,7 +74,7 @@ class DetermineObjectPose(smach.State):
     def execute(self, userdata):
         global robot,group,picking_pose
         if not HUMAN_CONTROL:
-            rospy.sleep(3)
+            rospy.sleep(1)
             object_pose = arm_utils.object_pose(0)
             print "object pose"
             print [object_pose.pose.translation.x, object_pose.pose.translation.y, object_pose.pose.translation.z,
