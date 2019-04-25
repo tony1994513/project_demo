@@ -79,9 +79,9 @@ class DetermineObjectPose(smach.State):
             #     ,picking_pose.orientation.y,picking_pose.orientation.z,picking_pose.orientation.w]
         rospy.sleep(1)
         if not SIMULATION:
-            rospy.sleep(5)
+            rospy.sleep(1)
             object_pose = arm_utils.object_pose(0)
-            rospy.sleep(3)
+            rospy.sleep(5)
         rospy.loginfo("Picking pose set by human")
         picking_pose = picking_pose
 
