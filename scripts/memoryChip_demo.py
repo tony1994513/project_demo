@@ -77,12 +77,12 @@ class DetermineObjectPose(smach.State):
             # print "raw picking pose"
             # print [picking_pose.position.x,picking_pose.position.y,picking_pose.position.z,picking_pose.orientation.x
             #     ,picking_pose.orientation.y,picking_pose.orientation.z,picking_pose.orientation.w]
-        rospy.sleep(1)
-        if not SIMULATION:
-            rospy.sleep(1)
-            object_pose = arm_utils.object_pose(0)
-            rospy.sleep(5)
-        rospy.loginfo("Picking pose set by human")
+        # rospy.sleep(1)
+        # if not SIMULATION:
+            # rospy.sleep(1)
+            # object_pose = arm_utils.object_pose(0)
+            # rospy.sleep(1)
+        # rospy.loginfo("Picking pose set by human")
         picking_pose = picking_pose
 
         return "succuss"
@@ -106,16 +106,16 @@ class MoveToPickPosition(smach.State):
 
     def execute(self, userdata):
         global robot,group,picking_pose
-        pick = copy.deepcopy(picking_pose)
-        new_traj = arm_utils.linear_interplotation(pick)
-        (plan, fraction) = group.compute_cartesian_path(
-                            new_traj,   # waypoints to follow
-                            0.001,        # eef_step
-                            0.0)         # jump_threshold
+        pick = _Constant.memoeryChip_pickJoint_1
+        plan = arm_utils.fK_calculate(group,pick)
+        arm_utils.execute_plan(group,plan)
+
+        pick = _Constant.memoeryChip_pickJoint_2
+        plan = arm_utils.fK_calculate(group,pick)
         arm_utils.execute_plan(group,plan)
             
         if not SIMULATION:
-            rospy.sleep(2)
+            rospy.sleep(1)
             arm_utils.gripper_control("chip_close")
             rospy.sleep(1)
             # rospy.sleep(2)
@@ -144,9 +144,9 @@ class MoveToAnomalyPrePickPosition(smach.State):
         smach.State.__init__(self, outcomes=['succuss'])
 
     def execute(self, userdata):
-        global robot,group
+        global robot,group,insert_pose
 
-        Anomalyprepick = copy.deepcopy(_Constant.memoeryChip_anomalyPose)
+        Anomalyprepick = copy.deepcopy(insert_pose)
         Anomalyprepick.position.z += 0.17
         plan = arm_utils.iK_calculate(group,Anomalyprepick)
         arm_utils.execute_plan(group,plan)
@@ -157,15 +157,19 @@ class MoveToAnomalyPickPosition(smach.State):
         smach.State.__init__(self, outcomes=['succuss'])
 
     def execute(self, userdata):
-        global robot,group
-        Anomalypick = copy.deepcopy(_Constant.memoeryChip_anomalyPose)
-        new_traj = arm_utils.linear_interplotation(Anomalypick)
-        (plan, fraction) = group.compute_cartesian_path(
-                            new_traj,   # waypoints to follow
-                            0.001,        # eef_step
-                            0.0)         # jump_threshold
+        global robot,group,insert_pose
+        # Anomalypick = copy.deepcopy(insert_pose)
+        # Anomalypick.position.y += 0.002
+        # Anomalypick.position.z += 0.013
+        # new_traj = arm_utils.linear_interplotation(Anomalypick)
+        # (plan, fraction) = group.compute_cartesian_path(
+        #                     new_traj,   # waypoints to follow
+        #                     0.001,        # eef_step
+        #                     0.0)         # jump_threshold
+        Anomalypick = _Constant.anomalyJoint
+        plan = arm_utils.fK_calculate(group,Anomalypick)
         arm_utils.execute_plan(group,plan)
-        rospy.sleep(5)
+        rospy.sleep(2)
         return "succuss"
 
 class BackToAnomalyPrePickPosition(smach.State):
@@ -173,14 +177,10 @@ class BackToAnomalyPrePickPosition(smach.State):
         smach.State.__init__(self, outcomes=['succuss'])
 
     def execute(self, userdata):
-        global robot,group
-        Anomalyprepick = copy.deepcopy(_Constant.memoeryChip_anomalyPose)
-        Anomalyprepick.position.z += 0.17
-        new_traj = arm_utils.linear_interplotation_back(Anomalyprepick)
-        (plan, fraction) = group.compute_cartesian_path(
-                            new_traj,   # waypoints to follow
-                            0.1,        # eef_step
-                            0.0)         # jump_threshold
+        global robot,group,insert_pose
+        Anomalyprepick = copy.deepcopy(insert_pose)
+        Anomalyprepick.position.z += 0.08
+        plan = arm_utils.iK_calculate(group,Anomalyprepick)
         arm_utils.execute_plan(group,plan)
         return "succuss"
 
@@ -190,11 +190,10 @@ class MoveToPreInsertPosition(smach.State):
 
     def execute(self, userdata):
         global robot,group,insert_pose
-        arm_utils.speed_set(group, 1)
-        preinsert = copy.deepcopy(insert_pose)
-        preinsert.position.z += preinsert_offset
-        plan = arm_utils.iK_calculate(group,preinsert)
+        preinsert = _Constant.preNomalJoint
+        plan = arm_utils.fK_calculate(group,preinsert)
         arm_utils.execute_plan(group,plan)
+        rospy.sleep(2)
         return "succuss"
 
 class MoveToInsertPosition(smach.State):
@@ -203,16 +202,11 @@ class MoveToInsertPosition(smach.State):
 
     def execute(self, userdata):
         global robot,group,insert_pose
-        arm_utils.speed_set(group, 0.5)
-        insert_pose = copy.deepcopy(insert_pose)
-        new_traj = arm_utils.linear_interplotation(insert_pose)
-        (plan, fraction) = group.compute_cartesian_path(
-                            new_traj,   # waypoints to follow
-                            0.001,        # eef_step
-                            0.0)         # jump_threshold
+        insert = _Constant.nomalJoint
+        plan = arm_utils.fK_calculate(group,insert)
         arm_utils.execute_plan(group,plan)
         if not SIMULATION:
-            rospy.sleep(2)
+            rospy.sleep(1)
             arm_utils.gripper_control("open")
             rospy.sleep(1)
         return "succuss"
@@ -223,16 +217,14 @@ class BackToPreInsertPosition(smach.State):
 
     def execute(self, userdata):
         global robot,group
-        arm_utils.speed_set(group, 1)
         preinsert = copy.deepcopy(insert_pose)
-        preinsert.position.z += preinsert_offset
+        preinsert.position.z += 0.1
         new_traj = arm_utils.linear_interplotation_back(preinsert)
         (plan, fraction) = group.compute_cartesian_path(
                             new_traj,   # waypoints to follow
                             0.1,        # eef_step
                             0.0)         # jump_threshold
         arm_utils.execute_plan(group,plan)
-        
         if not SIMULATION:
             arm_utils.gripper_control("open")
         return "succuss"
