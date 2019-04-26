@@ -60,7 +60,7 @@ class MoveToCameraDetectionPosition(smach.State):
         global robot,group
         plan = arm_utils.fK_calculate(group,_Constant.memoeryChip_camera_detection)
         arm_utils.execute_plan(group,plan)
-        rospy.sleep(3)
+        rospy.sleep(1)
         return "succuss"
 
 class DetermineObjectPose(smach.State):
@@ -69,6 +69,7 @@ class DetermineObjectPose(smach.State):
 
     def execute(self, userdata):
         global robot,group,picking_pose
+<<<<<<< HEAD
 
             # print "object pose"
             # print [object_pose.pose.translation.x, object_pose.pose.translation.y, object_pose.pose.translation.z,
@@ -83,6 +84,13 @@ class DetermineObjectPose(smach.State):
             # object_pose = arm_utils.object_pose(0)
             # rospy.sleep(1)
         # rospy.loginfo("Picking pose set by human")
+=======
+        if not SIMULATION:
+            rospy.sleep(1)
+            object_pose = arm_utils.object_pose(0)
+            print object_pose
+        rospy.loginfo("Picking pose set by human")
+>>>>>>> cb6b254ec26f5d8d08841d3407d2ce4c9012ca0f
         picking_pose = picking_pose
 
         return "succuss"
@@ -144,10 +152,18 @@ class MoveToAnomalyPrePickPosition(smach.State):
         smach.State.__init__(self, outcomes=['succuss'])
 
     def execute(self, userdata):
+<<<<<<< HEAD
         global robot,group,insert_pose
 
         Anomalyprepick = copy.deepcopy(insert_pose)
         Anomalyprepick.position.z += 0.17
+=======
+        global robot,group
+        rospy.sleep(2)
+        Anomalyprepick = copy.deepcopy(_Constant.memoeryChip_insertPose)
+        Anomalyprepick.position.y += 0.05
+        Anomalyprepick.position.z += 0.1
+>>>>>>> cb6b254ec26f5d8d08841d3407d2ce4c9012ca0f
         plan = arm_utils.iK_calculate(group,Anomalyprepick)
         arm_utils.execute_plan(group,plan)
         return "succuss"
@@ -157,6 +173,7 @@ class MoveToAnomalyPickPosition(smach.State):
         smach.State.__init__(self, outcomes=['succuss'])
 
     def execute(self, userdata):
+<<<<<<< HEAD
         global robot,group,insert_pose
         # Anomalypick = copy.deepcopy(insert_pose)
         # Anomalypick.position.y += 0.002
@@ -170,6 +187,18 @@ class MoveToAnomalyPickPosition(smach.State):
         plan = arm_utils.fK_calculate(group,Anomalypick)
         arm_utils.execute_plan(group,plan)
         rospy.sleep(2)
+=======
+        global robot,group
+        Anomalypick = copy.deepcopy(_Constant.memoeryChip_insertPose)
+        Anomalypick.position.y += 0.005
+        new_traj = arm_utils.linear_interplotation(Anomalypick)
+        (plan, fraction) = group.compute_cartesian_path(
+                            new_traj,   # waypoints to follow
+                            0.001,        # eef_step
+                            0.0)         # jump_threshold
+        arm_utils.execute_plan(group,plan)
+        rospy.sleep(3)
+>>>>>>> cb6b254ec26f5d8d08841d3407d2ce4c9012ca0f
         return "succuss"
 
 class BackToAnomalyPrePickPosition(smach.State):
@@ -177,10 +206,21 @@ class BackToAnomalyPrePickPosition(smach.State):
         smach.State.__init__(self, outcomes=['succuss'])
 
     def execute(self, userdata):
+<<<<<<< HEAD
         global robot,group,insert_pose
         Anomalyprepick = copy.deepcopy(insert_pose)
         Anomalyprepick.position.z += 0.08
         plan = arm_utils.iK_calculate(group,Anomalyprepick)
+=======
+        global robot,group
+        Anomalyprepick = copy.deepcopy(_Constant.memoeryChip_insertPose)
+        Anomalyprepick.position.z += 0.05
+        new_traj = arm_utils.linear_interplotation_back(Anomalyprepick)
+        (plan, fraction) = group.compute_cartesian_path(
+                            new_traj,   # waypoints to follow
+                            0.1,        # eef_step
+                            0.0)         # jump_threshold
+>>>>>>> cb6b254ec26f5d8d08841d3407d2ce4c9012ca0f
         arm_utils.execute_plan(group,plan)
         return "succuss"
 
