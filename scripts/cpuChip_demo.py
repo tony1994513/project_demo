@@ -60,7 +60,7 @@ class MoveToCameraDetectionPosition(smach.State):
  
         plan = arm_utils.fK_calculate(group,_Constant.cpu_camera_detection)
         arm_utils.execute_plan(group,plan )
-        rospy.sleep(2)
+        rospy.sleep(1)
         return "succuss"
 
 class DetermineObjectPose(smach.State):
@@ -69,9 +69,9 @@ class DetermineObjectPose(smach.State):
 
     def execute(self, userdata):
         global robot,group,picking_pose
-        rospy.sleep(1)
+        # rospy.sleep(1)
         object_pose = arm_utils.object_pose(1)
-        rospy.sleep(4)
+        # rospy.sleep(1)
         # print "object pose"
         # print [object_pose.pose.translation.x, object_pose.pose.translation.y, object_pose.pose.translation.z,
         # object_pose.pose.rotation.x ,object_pose.pose.rotation.y,object_pose.pose.rotation.z,object_pose.pose.rotation.w] 
@@ -137,6 +137,7 @@ class MoveToPreInsertPosition(smach.State):
 
     def execute(self, userdata):
         global robot,group,insert_pose
+        
         preinsert = copy.deepcopy(insert_pose)
         preinsert.position.z += preinsert_offset
         plan = arm_utils.iK_calculate(group,preinsert)

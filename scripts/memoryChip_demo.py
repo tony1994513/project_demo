@@ -60,7 +60,7 @@ class MoveToCameraDetectionPosition(smach.State):
         global robot,group
         plan = arm_utils.fK_calculate(group,_Constant.memoeryChip_camera_detection)
         arm_utils.execute_plan(group,plan)
-        rospy.sleep(3)
+        rospy.sleep(2)
         return "succuss"
 
 class DetermineObjectPose(smach.State):
@@ -77,11 +77,12 @@ class DetermineObjectPose(smach.State):
             # print "raw picking pose"
             # print [picking_pose.position.x,picking_pose.position.y,picking_pose.position.z,picking_pose.orientation.x
             #     ,picking_pose.orientation.y,picking_pose.orientation.z,picking_pose.orientation.w]
-        rospy.sleep(1)
+        # rospy.sleep(1)
         if not SIMULATION:
             rospy.sleep(1)
             object_pose = arm_utils.object_pose(0)
-            rospy.sleep(5)
+            print object_pose
+            # rospy.sleep(1)
         rospy.loginfo("Picking pose set by human")
         picking_pose = picking_pose
 
@@ -115,7 +116,7 @@ class MoveToPickPosition(smach.State):
         arm_utils.execute_plan(group,plan)
             
         if not SIMULATION:
-            rospy.sleep(2)
+            rospy.sleep(1)
             arm_utils.gripper_control("chip_close")
             rospy.sleep(1)
             # rospy.sleep(2)
@@ -145,7 +146,7 @@ class MoveToAnomalyPrePickPosition(smach.State):
 
     def execute(self, userdata):
         global robot,group
-
+        rospy.sleep(2)
         Anomalyprepick = copy.deepcopy(_Constant.memoeryChip_anomalyPose)
         Anomalyprepick.position.z += 0.17
         plan = arm_utils.iK_calculate(group,Anomalyprepick)

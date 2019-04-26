@@ -2,8 +2,8 @@
 <launch>
     <arg name="basic_path" default="$(find linemod_pose_estimation)/config"/>
     
-    <arg name="args1" default="$(arg basic_path)/data_new/memoryChip7_siat_ensenso_templates_0.yml"/> 
-    <arg name="args2" default="$(arg basic_path)/data_new/memoryChip7_siat_ensenso_params_0.yml"/>
+    <arg name="args1" default="$(arg basic_path)/data_new/memoryChip8_siat_ensenso_templates_0.yml"/> 
+    <arg name="args2" default="$(arg basic_path)/data_new/memoryChip8_siat_ensenso_params_0.yml"/>
     <arg name="args3" default="$(arg basic_path)/stl/memoryChip4_siat.stl"/>
     <arg name="args4" default="90"/> 
     <arg name="args5" default="150"/>
